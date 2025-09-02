@@ -3,9 +3,15 @@ setlocal enabledelayedexpansion
 
 :: === CONFIG ===================================================
 set "FFMPEG=C:\Tools\ffmpeg-7.1.1-full_build\bin\ffmpeg.exe"
-set "MAX_MB=10"            & rem Discord free limit
 set "AUDIO_EXT=ogg"        & rem "ogg" (Opus) or "m4a" (AAC)
 :: ==============================================================
+
+:: === PROMPT USER FOR SIZE REDUCTION ===
+set /p REDUCE_MB="Enter the amount (in MB) to reduce each file by: "
+if "%REDUCE_MB%"=="" (
+    echo No reduction amount entered. Exiting.
+    exit /b 1
+)
 
 if not exist "%FFMPEG%" (
     echo ffmpeg.exe not found at:
@@ -23,8 +29,8 @@ if "%~1"=="" (
 )
 
 if exist "%SOURCE%\" (
-    for /r "%SOURCE%" %%F in (*.mp3 *.flac *.wav *.m4a *.aac *.ogg *.opus *.wma) do (
-        call :process "%%~fF"
+    for %%F in ("%SOURCE%"\*.mp3 "%SOURCE%"\*.flac "%SOURCE%"\*.wav "%SOURCE%"\*.m4a "%SOURCE%"\*.aac "%SOURCE%"\*.ogg "%SOURCE%"\*.opus "%SOURCE%"\*.wma) do (
+        if exist "%%F" call :process "%%F"
     )
 ) else (
     call :process "%SOURCE%"
@@ -37,6 +43,11 @@ goto :eof
 set "IN=%~1"
 set "OUT=%~dp1DiscordReady\%~n1_discord.%AUDIO_EXT%"
 if not exist "%~dp1DiscordReady" mkdir "%~dp1DiscordReady"
+
+:: Get original file size in MB
+for %%S in ("%IN%") do set /a "ORIG_MB=%%~zS/1048576"
+set /a "MAX_MB=ORIG_MB-REDUCE_MB"
+if %MAX_MB% lss 1 set "MAX_MB=1"
 
 :: Get duration in seconds
 for /f "tokens=*" %%D in ('"%FFMPEG%" -i "%IN%" 2^>^&1 ^| findstr /i "Duration"') do (
