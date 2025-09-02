@@ -1,5 +1,5 @@
 #!/bin/bash
-# discord-encode.sh - Cross-platform audio size reducer for Discord
+# encode-video.sh - Cross-platform video size reducer
 # Works on Linux, Mac, Windows (with WSL or Git Bash)
 
 # === CONFIG ===================================================
@@ -17,8 +17,8 @@ SOURCE="${1:-$(pwd)}"
 
 process_file() {
     IN="$1"
-    OUT_DIR="$(dirname "$IN")/DiscordReady"
-    OUT="$OUT_DIR/$(basename "${IN%.*}")_discord.$AUDIO_EXT"
+    OUT_DIR="$(dirname "$IN")/Ready"
+    OUT="$OUT_DIR/$(basename "${IN%.*}")_ready.$AUDIO_EXT"
     mkdir -p "$OUT_DIR"
 
     # Get original file size in MB

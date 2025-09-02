@@ -41,8 +41,8 @@ goto :eof
 :: === PER-FILE PROCESSING ======================================
 :process
 set "IN=%~1"
-set "OUT=%~dp1DiscordReady\%~n1_discord.%AUDIO_EXT%"
-if not exist "%~dp1DiscordReady" mkdir "%~dp1DiscordReady"
+    set "OUT=%~dp1Ready\%~n1_ready.%AUDIO_EXT%"
+    if not exist "%~dp1Ready" mkdir "%~dp1Ready"
 
 :: Get original file size in MB
 for %%S in ("%IN%") do set /a "ORIG_MB=%%~zS/1048576"

@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 
 :: === CONFIG ===================================================
 set "FFMPEG=C:\Tools\ffmpeg-7.1.1-full_build\bin\ffmpeg.exe"
-set "MAX_MB=10"               & rem Discord free limit
+    set "MAX_MB=10"               & rem Max size limit
 :: ==============================================================
 
 if not exist "%FFMPEG%" (
@@ -35,8 +35,8 @@ goto :eof
 :: === PER-FILE PROCESSING ======================================
 :process
 set "IN=%~1"
-set "OUT=%~dp1DiscordReady\%~n1_discord.mp4"
-if not exist "%~dp1DiscordReady" mkdir "%~dp1DiscordReady"
+set "OUT=%~dp1Ready\%~n1_ready.mp4"
+if not exist "%~dp1Ready" mkdir "%~dp1Ready"
 
 :: Get duration in seconds
 for /f "tokens=*" %%D in ('"%FFMPEG%" -i "%IN%" 2^>^&1 ^| findstr /i "Duration"') do (

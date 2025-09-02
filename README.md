@@ -1,48 +1,71 @@
-## 📁 CMD File Tools Suite
+# 📁 CMDifyYourFiles
 
-A collection of handy CMD scripts for automating file tasks — including uploading media files to Discord for free and converting PowerPoint presentations (`.pptx`) to PDF.
-
----
-
-### 🚀 Features
-
-- **🎵 Discord Media Uploader**  
-  Upload audio and video files to Discord using command-line automation.
-
-- **📄 PPTX to PDF Converter**  
-  Convert `.pptx` files to `.pdf` format quickly using a simple CMD script.
+A suite of handy scripts for automating file conversion and encoding tasks on Windows and Linux.
 
 ---
 
-### 🛠️ Requirements
+## 🚀 Features
 
-- Windows OS  
-- Internet connection (for Discord uploads)  
-- Microsoft PowerPoint installed (for PPTX to PDF conversion)
+- **🔄 Generic File Converter**  
+  Convert any file to your desired format by drag-and-drop or command-line prompt. Supports both Windows (`convert-any-file.bat`) and Linux (`convert-any-file.sh`).
+
+- **🎬 Video Encoder**  
+  Reduce video file size for sharing (e.g., Discord) using `encode-video.bat` (Windows) or `encode-video.sh` (Linux).
+
+- **🎵 Audio Encoder**  
+  Reduce audio file size for sharing using `audio.bat` (Windows) or `audio.sh` (Linux).
 
 ---
 
-### 📌 Usage
+## 🛠️ Requirements
 
-#### 1. Discord Media Uploader
+- Windows or Linux OS
+- ffmpeg installed and available in PATH (for encoding)
+- (Optional) Microsoft PowerPoint for PPTX to PDF conversion on Windows
 
+---
+
+## 📌 Usage
+
+### 1. Generic File Converter
+
+**Windows:**
 ```cmd
-discord_uploader.cmd "path\to\your\file.mp4"
+[convert-any-file.bat](http://_vscodecontentref_/8) "path\to\your\file.ext"
 ```
 
-Make sure to configure your Discord webhook or bot token inside the script.
-
-#### 2. PPTX to PDF Converter
-
-```cmd
-pptx_to_pdf.cmd "path\to\your\presentation.pptx"
+**Linux:**
+```bash
+convert-any-file.sh "path/to/your/file.ext"
 ```
 
-This script uses PowerPoint's COM interface to export the file as PDF.
+### 2. Video Encoder
+
+**Windows:**
+```cmd
+encode-video.bat "path\to\your\video.mp4"
+```
+
+**Linux:**
+```bash
+encode-video.sh "path/to/your/video.mp4"
+```
+
+### 3. Audio Encoder
+
+**Windows:**
+```cmd
+audio.bat "path\to\your\audio.mp3"
+```
+
+**Linux:**
+```bash
+audio.sh "path/to/your/audio.mp3"
+```
 
 ---
 
-### 🙌 Contributions
+## 🙌 Contributions
 
 Pull requests are welcome! If you have ideas for new CMD tools or improvements, feel free to contribute.
 
