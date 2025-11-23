@@ -50,7 +50,7 @@ goto :end
 
 :ppt_to_pdf
 echo Converting PowerPoint to PDF...
-powershell -ExecutionPolicy Bypass -Command "$ppt = New-Object -ComObject PowerPoint.Application; $ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse; $pres = $ppt.Presentations.Open('%INFILE%', $true, $true, $false); $pres.SaveAs('%OUTFILE%', 32); $pres.Close(); $ppt.Quit(); [System.Runtime.Interopservices.Marshal]::ReleaseComObject($ppt) | Out-Null"
+powershell -ExecutionPolicy Bypass -Command "$ppt = New-Object -ComObject PowerPoint.Application; $pres = $ppt.Presentations.Open('%INFILE%', $true, $true, $false); $pres.SaveAs('%OUTFILE%', 32); $pres.Close(); $ppt.Quit(); [System.Runtime.Interopservices.Marshal]::ReleaseComObject($ppt) | Out-Null"
 if !ERRORLEVEL! equ 0 (
     echo Conversion successful: %OUTFILE%
 ) else (
