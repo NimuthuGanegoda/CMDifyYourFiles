@@ -1,27 +1,29 @@
 # 📁 CMDifyYourFiles
 
-A suite of handy scripts for automating file conversion and encoding tasks on Windows and Linux.
+Handy scripts for automating file conversion and encoding on Windows and Linux, now with recursive folder support.
 
 ---
 
 ## 🚀 Features
 
 - **🔄 Generic File Converter**  
-  Convert any file to your desired format by drag-and-drop or command-line prompt. Supports both Windows (`convert-any-file.bat`) and Linux (`convert-any-file.sh`).
+  Convert files to common formats (PDF, JPG, etc.). Drag-and-drop a single file or pass a folder to convert contents recursively on Windows (`convert-any-file.bat`) and Linux (`convert-any-file.sh`).
 
 - **🎬 Video Encoder**  
-  Reduce video file size for sharing (e.g., Discord) using `encode-video.bat` (Windows) or `encode-video.sh` (Linux).
+  Reduce video file size for sharing (e.g., Discord). Accepts a single video or a folder and encodes all supported videos recursively: `encode-video.bat` (Windows) and `encode-video.sh` (Linux).
 
 - **🎵 Audio Encoder**  
-  Reduce audio file size for sharing using `audio.bat` (Windows) or `audio.sh` (Linux).
+  Reduce audio file size for sharing. Accepts a single audio file or a folder (recursive): `audio.bat` (Windows) and `audio.sh` (Linux).
 
 ---
 
 ## 🛠️ Requirements
 
 - Windows or Linux OS
-- ffmpeg installed and available in PATH (for encoding)
-- (Optional) Microsoft PowerPoint for PPTX to PDF conversion on Windows
+- ffmpeg installed and available in `PATH` (audio/video)
+- LibreOffice (Linux) for Office → PDF conversions
+- ImageMagick (`convert`) for image format conversions
+- (Windows) Microsoft PowerPoint/Word for Office → PDF conversions
 
 ---
 
@@ -29,38 +31,68 @@ A suite of handy scripts for automating file conversion and encoding tasks on Wi
 
 ### 1. Generic File Converter
 
-**Windows:**
+**Windows (single file):**
 ```cmd
-[convert-any-file.bat](http://_vscodecontentref_/8) "path\to\your\file.ext"
+convert-any-file.bat "path\to\your\file.ext"
 ```
 
-**Linux:**
+**Windows (folder, recursive):**
+```cmd
+convert-any-file.bat "path\to\your\folder"
+```
+
+**Linux (single file):**
 ```bash
-convert-any-file.sh "path/to/your/file.ext"
+./convert-any-file.sh "path/to/your/file.ext"
+```
+
+**Linux (folder, recursive):**
+```bash
+./convert-any-file.sh "path/to/your/folder"
 ```
 
 ### 2. Video Encoder
 
-**Windows:**
+**Windows (single file):**
 ```cmd
 encode-video.bat "path\to\your\video.mp4"
 ```
 
-**Linux:**
+**Windows (folder, recursive):**
+```cmd
+encode-video.bat "path\to\your\folder"
+```
+
+**Linux (single file):**
 ```bash
-encode-video.sh "path/to/your/video.mp4"
+./encode-video.sh "path/to/your/video.mp4"
+```
+
+**Linux (folder, recursive):**
+```bash
+./encode-video.sh "path/to/your/folder"
 ```
 
 ### 3. Audio Encoder
 
-**Windows:**
+**Windows (single file):**
 ```cmd
 audio.bat "path\to\your\audio.mp3"
 ```
 
-**Linux:**
+**Windows (folder, recursive):**
+```cmd
+audio.bat "path\to\your\folder"
+```
+
+**Linux (single file):**
 ```bash
-audio.sh "path/to/your/audio.mp3"
+./audio.sh "path/to/your/audio.mp3"
+```
+
+**Linux (folder, recursive):**
+```bash
+./audio.sh "path/to/your/folder"
 ```
 
 ---

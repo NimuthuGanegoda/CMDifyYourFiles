@@ -1,16 +1,14 @@
 #!/bin/bash
-# encode-video.sh - Cross-platform video size reducer
-# Works on Linux, Mac, Windows (with WSL or Git Bash)
+# encode-video.sh - Video size reducer with folder support
 
 # === CONFIG ===================================================
 FFMPEG=ffmpeg
-AUDIO_EXT=ogg        # "ogg" (Opus) or "m4a" (AAC)
+DEFAULT_MAX_MB=10    # default max output size per video
 # ==============================================================
 
-read -p "Enter the amount (in MB) to reduce each file by: " REDUCE_MB
-if [[ -z "$REDUCE_MB" ]]; then
-    echo "No reduction amount entered. Exiting."
-    exit 1
+read -p "Enter target max size in MB (default ${DEFAULT_MAX_MB}): " MAX_MB
+if [[ -z "$MAX_MB" ]]; then
+    MAX_MB=$DEFAULT_MAX_MB
 fi
 
 SOURCE="${1:-$(pwd)}"
@@ -18,13 +16,8 @@ SOURCE="${1:-$(pwd)}"
 process_file() {
     IN="$1"
     OUT_DIR="$(dirname "$IN")/Ready"
-    OUT="$OUT_DIR/$(basename "${IN%.*}")_ready.$AUDIO_EXT"
+    OUT="$OUT_DIR/$(basename "${IN%.*}")_ready.mp4"
     mkdir -p "$OUT_DIR"
-
-    # Get original file size in MB
-    ORIG_MB=$(du -m "$IN" | awk '{print $1}')
-    MAX_MB=$((ORIG_MB - REDUCE_MB))
-    [[ $MAX_MB -lt 1 ]] && MAX_MB=1
 
     # Get duration in seconds
     SECS=$($FFMPEG -i "$IN" 2>&1 | grep Duration | awk '{print $2}' | tr -d , | awk -F: '{print ($1*3600)+($2*60)+$3}')
@@ -33,24 +26,31 @@ process_file() {
         return
     fi
 
-    # Calculate target bitrate (kbit/s) for MAX_MB
-    MAX_KBITS=$(( (MAX_MB * 8192) / SECS ))
-    [[ $MAX_KBITS -lt 48 ]] && MAX_KBITS=48
+    # Calculate target bitrate (kbit/s) for MAX_MB; subtract ~128k for audio
+    MAX_KBITS=$(( (MAX_MB * 8192) / SECS - 128 ))
+    [[ $MAX_KBITS -lt 200 ]] && MAX_KBITS=200
 
     echo
     echo "Processing $(basename "$IN")  (${SECS}s  ->  ${MAX_MB}MB @ ${MAX_KBITS}kbit/s)"
 
-    if [[ "$AUDIO_EXT" == "m4a" ]]; then
-        $FFMPEG -hide_banner -loglevel error -stats \
-            -i "$IN" -c:a aac -b:a ${MAX_KBITS}k -movflags +faststart "$OUT" -y
-    else
-        $FFMPEG -hide_banner -loglevel error -stats \
-            -i "$IN" -c:a libopus -b:a ${MAX_KBITS}k -vbr on -compression_level 10 "$OUT" -y
-    fi
+    # Two-pass encode for better quality at target bitrate
+    $FFMPEG -hide_banner -loglevel error -stats \
+        -i "$IN" \
+        -c:v libx264 -b:v ${MAX_KBITS}k -pass 1 -an -f mp4 -y /dev/null
+
+    $FFMPEG -hide_banner -loglevel error -stats \
+        -i "$IN" \
+        -c:v libx264 -b:v ${MAX_KBITS}k -pass 2 \
+        -c:a aac -b:a 96k -movflags +faststart \
+        "$OUT" -y
 }
 
 export -f process_file
-export FFMPEG AUDIO_EXT REDUCE_MB
+export FFMPEG MAX_MB
 
-find "$SOURCE" -type f \( -iname "*.mp3" -o -iname "*.flac" -o -iname "*.wav" -o -iname "*.m4a" -o -iname "*.aac" -o -iname "*.ogg" -o -iname "*.opus" -o -iname "*.wma" \) \
-    -exec bash -c 'process_file "$0"' {} \;
+if [[ -d "$SOURCE" ]]; then
+    find "$SOURCE" -type f \( -iname "*.mp4" -o -iname "*.mov" -o -iname "*.mkv" -o -iname "*.avi" -o -iname "*.flv" -o -iname "*.wmv" -o -iname "*.webm" \) \
+        -exec bash -c 'process_file "$0"' {} \;
+else
+    process_file "$SOURCE"
+fi

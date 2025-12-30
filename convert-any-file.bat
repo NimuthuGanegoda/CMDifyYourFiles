@@ -1,25 +1,47 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: === Detect file type ===
+:: === Detect input (file or folder) ===
 if "%~1"=="" (
-    echo Please drag and drop a file onto this script.
+    echo Please drag and drop a file or folder onto this script.
     pause
     exit /b
 )
-set "INFILE=%~1"
+set "INPUT=%~1"
+
+:: === If folder: bulk convert recursively ===
+if exist "%INPUT%\" (
+    set /p OUTEXT=Enter desired output extension for all files (e.g. pdf, jpg): 
+    if "%OUTEXT%"=="" (
+        echo No output extension provided.
+        goto :end
+    )
+    for /r "%INPUT%" %%F in (*.*) do (
+        call :convert_one "%%~fF" "%%~xF" "%OUTEXT%"
+    )
+    goto :end
+)
+
+:: === Single file path ===
+set "INFILE=%INPUT%"
 set "EXT=%~x1"
 echo Detected file type: %EXT%
-
-:: === Prompt for output extension ===
 set /p OUTEXT=Enter desired output extension (e.g. pdf, docx, jpg): 
+if "%OUTEXT%"=="" (
+    echo No output extension provided.
+    goto :end
+)
+call :convert_one "%INFILE%" "%EXT%" "%OUTEXT%"
+goto :end
 
-:: === Prepare output filename ===
+:: === Per-file conversion ===
+:convert_one
+set "INFILE=%~1"
+set "EXT=%~2"
+set "OUTEXT=%~3"
 set "OUTFILE=%~dp1%~n1.%OUTEXT%"
 echo Input file: %INFILE%
 echo Output file: %OUTFILE%
-
-:: === Conversion logic ===
 
 :: PowerPoint to PDF (PPTX/PPT)
 if /i "%OUTEXT%"=="pdf" (
@@ -43,10 +65,8 @@ if /i "%EXT%"==".tiff" goto :image_convert
 if /i "%EXT%"==".tif" goto :image_convert
 if /i "%EXT%"==".webp" goto :image_convert
 
-:: No conversion found
 echo No conversion logic implemented for %EXT% to %OUTEXT%
-echo Please add conversion command for this file type.
-goto :end
+goto :return
 
 :ppt_to_pdf
 echo Converting PowerPoint to PDF...
@@ -56,7 +76,7 @@ if !ERRORLEVEL! equ 0 (
 ) else (
     echo Conversion failed. Make sure PowerPoint is installed.
 )
-goto :end
+goto :return
 
 :word_to_pdf
 echo Converting Word document to PDF...
@@ -66,7 +86,7 @@ if !ERRORLEVEL! equ 0 (
 ) else (
     echo Conversion failed. Make sure Word is installed.
 )
-goto :end
+goto :return
 
 :image_convert
 echo Converting image format...
@@ -76,10 +96,14 @@ if !ERRORLEVEL! equ 0 (
 ) else (
     echo Conversion failed. Image format may not be supported.
 )
-goto :end
+goto :return
 
 :end
 
 pause
+exit /b
+
+:return
+rem Return to caller when bulk processing
 exit /b
 

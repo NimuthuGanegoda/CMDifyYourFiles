@@ -52,8 +52,11 @@ process_file() {
 export -f process_file
 export FFMPEG AUDIO_EXT REDUCE_MB
 
-for ext in mp3 flac wav m4a aac ogg opus wma; do
-    for f in "$SOURCE"/*.$ext; do
-        [ -e "$f" ] && process_file "$f"
-    done
-done
+if [[ -d "$SOURCE" ]]; then
+    # Recursively process supported audio files in the folder
+    find "$SOURCE" -type f \( -iname "*.mp3" -o -iname "*.flac" -o -iname "*.wav" -o -iname "*.m4a" -o -iname "*.aac" -o -iname "*.ogg" -o -iname "*.opus" -o -iname "*.wma" \) \
+        -exec bash -c 'process_file "$0"' {} \;
+else
+    # If a single file was provided, process just that file
+    process_file "$SOURCE"
+fi
