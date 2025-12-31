@@ -1,59 +1,128 @@
 #!/bin/bash
-# audio.sh - Cross-platform audio size reducer
-# Works on Linux, Mac, Windows (with WSL or Git Bash)
 
-# === CONFIG ===================================================
-FFMPEG=ffmpeg
-AUDIO_EXT=ogg        # "ogg" (Opus) or "m4a" (AAC)
-# ==============================================================
+echo ""
+echo "=========================================="
+echo "     AUDIO ENCODER - DRAG & DROP"
+echo "=========================================="
+echo ""
 
-read -p "Enter the amount (in MB) to reduce each file by: " REDUCE_MB
-if [[ -z "$REDUCE_MB" ]]; then
-    echo "No reduction amount entered. Exiting."
+# Check if files were provided
+if [ -z "$1" ]; then
+    echo "ERROR: No files detected!"
+    echo ""
+    echo "How to use:"
+    echo "  1. Drag and drop one or MORE audio files onto this script"
+    echo "  2. Enter MB to reduce each file by"
+    echo "  3. Encoded files saved in 'Ready' folder"
+    echo ""
+    echo "Supported: MP3, FLAC, WAV, M4A, AAC, OGG, OPUS, WMA"
+    echo ""
+    read -p "Press Enter to exit..."
     exit 1
 fi
 
-SOURCE="${1:-$(pwd)}"
+# Check if ffmpeg is installed
+if ! command -v ffmpeg &> /dev/null; then
+    echo "ERROR: FFmpeg not installed"
+    echo "Install with: sudo apt install ffmpeg"
+    echo ""
+    read -p "Press Enter to exit..."
+    exit 1
+fi
 
-process_file() {
-    IN="$1"
-    OUT_DIR="$(dirname "$IN")/Ready"
-    OUT="$OUT_DIR/$(basename "${IN%.*}")_ready.$AUDIO_EXT"
-    mkdir -p "$OUT_DIR"
+echo "Detected files ready to encode"
+echo ""
 
-    # Get original file size in MB
-    ORIG_MB=$(du -m "$IN" | awk '{print $1}')
-    MAX_MB=$((ORIG_MB - REDUCE_MB))
-    [[ $MAX_MB -lt 1 ]] && MAX_MB=1
-
-    # Get duration in seconds
-    SECS=$($FFMPEG -i "$IN" 2>&1 | grep Duration | awk '{print $2}' | tr -d , | awk -F: '{print ($1*3600)+($2*60)+$3}')
-    if [[ -z "$SECS" || "$SECS" == "0" ]]; then
-        echo "Could not get duration for $IN"
-        return
+# Prompt for reduction amount
+while true; do
+    read -p "Enter MB to reduce each file by: " REDUCE_MB
+    
+    if [ -z "$REDUCE_MB" ]; then
+        echo "ERROR: Cannot be empty. Try again."
+        echo ""
+        continue
     fi
-
-    # Calculate target bitrate (kbit/s) for MAX_MB
-    MAX_KBITS=$(( (MAX_MB * 8192) / SECS ))
-    [[ $MAX_KBITS -lt 48 ]] && MAX_KBITS=48
-
-    echo
-    echo "Processing $(basename "$IN")  (${SECS}s  ->  ${MAX_MB}MB @ ${MAX_KBITS}kbit/s)"
-
-    if [[ "$AUDIO_EXT" == "m4a" ]]; then
-        $FFMPEG -hide_banner -loglevel error -stats \
-            -i "$IN" -c:a aac -b:a ${MAX_KBITS}k -movflags +faststart "$OUT" -y
-    else
-        $FFMPEG -hide_banner -loglevel error -stats \
-            -i "$IN" -c:a libopus -b:a ${MAX_KBITS}k -vbr on -compression_level 10 "$OUT" -y
+    
+    if ! [[ "$REDUCE_MB" =~ ^[0-9]+$ ]]; then
+        echo "ERROR: Enter a number only."
+        echo ""
+        continue
     fi
-}
-
-export -f process_file
-export FFMPEG AUDIO_EXT REDUCE_MB
-
-for ext in mp3 flac wav m4a aac ogg opus wma; do
-    for f in "$SOURCE"/*.$ext; do
-        [ -e "$f" ] && process_file "$f"
-    done
+    
+    break
 done
+
+echo ""
+echo "Encoding to OGG format..."
+echo ""
+
+TOTAL=0
+SUCCESS=0
+FAILED=0
+
+# Process each file
+for file in "$@"; do
+    ((TOTAL++))
+    
+    echo "[$TOTAL] $(basename "$file")"
+    
+    # Check file exists
+    if [ ! -f "$file" ]; then
+        echo "    ERROR - File not found"
+        ((FAILED++))
+        continue
+    fi
+    
+    OUTDIR="$(dirname "$file")/Ready"
+    OUTFILE="$OUTDIR/$(basename "${file%.*}")_ready.ogg"
+    
+    # Create output directory
+    mkdir -p "$OUTDIR" 2>/dev/null
+    
+    # Get original file size in MB
+    ORIG_MB=$(du -m "$file" 2>/dev/null | awk '{print $1}')
+    if [ -z "$ORIG_MB" ]; then
+        echo "    ERROR - Cannot read file size"
+        ((FAILED++))
+        continue
+    fi
+    
+    TARGET_MB=$((ORIG_MB - REDUCE_MB))
+    [[ $TARGET_MB -lt 1 ]] && TARGET_MB=1
+    
+    # Get duration
+    SECS=$(ffmpeg -i "$file" 2>&1 | grep Duration | awk '{print $2}' | tr -d , | awk -F: '{print int(($1*3600)+($2*60)+$3)}')
+    if [[ -z "$SECS" || "$SECS" == "0" ]]; then
+        echo "    ERROR - Cannot read duration"
+        ((FAILED++))
+        continue
+    fi
+    
+    # Calculate bitrate
+    KBITS=$(( (TARGET_MB * 8192) / SECS ))
+    [[ $KBITS -lt 48 ]] && KBITS=48
+    
+    echo "    ${ORIG_MB}MB -> ${TARGET_MB}MB @ ${KBITS}kbit/s"
+    
+    ffmpeg -hide_banner -loglevel error -stats -i "$file" -c:a libopus -b:a ${KBITS}k "$OUTFILE" -y 2>/dev/null
+    
+    if [ $? -eq 0 ]; then
+        OUT_MB=$(du -m "$OUTFILE" 2>/dev/null | awk '{print $1}')
+        echo "    OK - ${OUT_MB}MB saved"
+        ((SUCCESS++))
+    else
+        echo "    ERROR - Encoding failed"
+        ((FAILED++))
+    fi
+done
+
+echo ""
+echo "=========================================="
+echo "Processed: $TOTAL files"
+echo "Success:   $SUCCESS"
+echo "Failed:    $FAILED"
+echo "=========================================="
+echo "Output folder: Ready/"
+echo ""
+read -p "Press Enter to exit..."
+exit 0

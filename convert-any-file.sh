@@ -1,63 +1,168 @@
 #!/bin/bash
 
-# Check if a file was provided
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Check if files were provided
 if [ -z "$1" ]; then
-    echo "Please drag and drop a file onto this script."
+    clear
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}    FILE CONVERTER - DRAG & DROP${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    echo
+    echo -e "${RED}ERROR: No files detected!${NC}"
+    echo
+    echo "How to use:"
+    echo "  1. Drag and drop ONE OR MORE files onto this script"
+    echo "  2. Enter the desired output format (pdf, jpg, png, docx, etc.)"
+    echo "  3. Files will be converted and saved in the same folder"
+    echo
+    echo "Supported conversions:"
+    echo "  - PowerPoint/Word (ppt, pptx, doc, docx) → PDF"
+    echo "  - Images (jpg, png, bmp, gif, tiff, webp) → other formats"
+    echo
+    read -p "Press Enter to exit..."
     exit 1
 fi
 
-INFILE="$1"
-ext="${INFILE##*.}"
-echo "Detected file type: .$ext"
+clear
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}    FILE CONVERTER - DRAG & DROP${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
 
-# Prompt for output extension
-read -p "Enter desired output extension (e.g. pdf, docx, jpg): " OUTEXT
-
-# Prepare output filename
-OUTFILE="${INFILE%.*}.$OUTEXT"
-echo "Input file: $INFILE"
-echo "Output file: $OUTFILE"
-
-# Conversion logic
-
-# PowerPoint to PDF (PPTX/PPT)
-if [[ "${OUTEXT,,}" == "pdf" ]]; then
-    if [[ "${ext,,}" == "pptx" || "${ext,,}" == "ppt" ]]; then
-        echo "Converting PowerPoint to PDF using LibreOffice..."
-        libreoffice --headless --convert-to pdf --outdir "$(dirname "$INFILE")" "$INFILE"
-        if [ $? -eq 0 ]; then
-            echo "Conversion successful: $OUTFILE"
-        else
-            echo "Conversion failed. Make sure LibreOffice is installed."
-        fi
-        exit 0
+# Prompt for output extension with validation
+while true; do
+    read -p "Enter output format (pdf, jpg, png, docx, etc.): " OUTEXT
+    
+    if [ -z "$OUTEXT" ]; then
+        echo -e "${RED}ERROR: Extension cannot be empty. Try again.${NC}"
+        continue
     fi
     
-    # Word to PDF (DOCX/DOC)
-    if [[ "${ext,,}" == "docx" || "${ext,,}" == "doc" ]]; then
-        echo "Converting Word document to PDF using LibreOffice..."
-        libreoffice --headless --convert-to pdf --outdir "$(dirname "$INFILE")" "$INFILE"
-        if [ $? -eq 0 ]; then
-            echo "Conversion successful: $OUTFILE"
-        else
-            echo "Conversion failed. Make sure LibreOffice is installed."
+    # Remove leading dot if present
+    OUTEXT="${OUTEXT#.}"
+    
+    # Validate: only alphanumeric
+    if ! [[ "$OUTEXT" =~ ^[a-zA-Z0-9]+$ ]]; then
+        echo -e "${RED}ERROR: Invalid format. Use only letters and numbers.${NC}"
+        continue
+    fi
+    
+    break
+done
+
+echo
+echo "Processing files..."
+echo
+
+TOTAL_FILES=0
+SUCCESS_COUNT=0
+FAILED_COUNT=0
+
+# Function to convert a single file
+convert_file() {
+    local INFILE="$1"
+    local ext="${INFILE##*.}"
+    ext="${ext,,}"  # Convert to lowercase
+    
+    # Validate file exists and is a regular file
+    if [ ! -f "$INFILE" ]; then
+        echo -e "${YELLOW}[SKIP]${NC} File not found or is a directory: $INFILE"
+        ((FAILED_COUNT++))
+        return
+    fi
+    
+    local OUTFILE="${INFILE%.*}.$OUTEXT"
+    ((TOTAL_FILES++))
+    
+    echo "[$TOTAL_FILES] Converting: $(basename "$INFILE")"
+    
+    # PowerPoint to PDF (PPTX/PPT)
+    if [[ "${OUTEXT,,}" == "pdf" ]]; then
+        if [[ "$ext" == "pptx" || "$ext" == "ppt" ]]; then
+            if ! command -v libreoffice &> /dev/null; then
+                echo -e "${RED}[ERROR]${NC} LibreOffice not installed. Install with: sudo apt install libreoffice"
+                ((FAILED_COUNT++))
+                return
+            fi
+            echo "Converting PowerPoint to PDF..."
+            if libreoffice --headless --convert-to pdf --outdir "$(dirname "$INFILE")" "$INFILE" > /dev/null 2>&1; then
+                echo -e "${GREEN}[OK]${NC} $(basename "$OUTFILE")"
+                ((SUCCESS_COUNT++))
+            else
+                echo -e "${RED}[ERROR]${NC} Conversion failed"
+                ((FAILED_COUNT++))
+            fi
+            return
         fi
-        exit 0
+        
+        # Word to PDF (DOCX/DOC)
+        if [[ "$ext" == "docx" || "$ext" == "doc" ]]; then
+            if ! command -v libreoffice &> /dev/null; then
+                echo -e "${RED}[ERROR]${NC} LibreOffice not installed. Install with: sudo apt install libreoffice"
+                ((FAILED_COUNT++))
+                return
+            fi
+            echo "Converting Word to PDF..."
+            if libreoffice --headless --convert-to pdf --outdir "$(dirname "$INFILE")" "$INFILE" > /dev/null 2>&1; then
+                echo -e "${GREEN}[OK]${NC} $(basename "$OUTFILE")"
+                ((SUCCESS_COUNT++))
+            else
+                echo -e "${RED}[ERROR]${NC} Conversion failed"
+                ((FAILED_COUNT++))
+            fi
+            return
+        fi
     fi
+    
+    # Image conversions (JPG, PNG, BMP, GIF, TIFF, WEBP)
+    if [[ "$ext" =~ ^(jpg|jpeg|png|bmp|gif|tiff|tif|webp)$ ]]; then
+        if ! command -v convert &> /dev/null; then
+            echo -e "${RED}[ERROR]${NC} ImageMagick not installed. Install with: sudo apt install imagemagick"
+            ((FAILED_COUNT++))
+            return
+        fi
+        echo "Converting image format..."
+        if convert "$INFILE" "$OUTFILE" > /dev/null 2>&1; then
+            echo -e "${GREEN}[OK]${NC} $(basename "$OUTFILE")"
+            ((SUCCESS_COUNT++))
+        else
+            echo -e "${RED}[ERROR]${NC} Image format not supported or conversion failed"
+            ((FAILED_COUNT++))
+        fi
+        return
+    fi
+    
+    # No conversion found
+    echo -e "${RED}[ERROR]${NC} .${ext} → .${OUTEXT} conversion not supported"
+    ((FAILED_COUNT++))
+}
+
+# Process all files
+for file in "$@"; do
+    convert_file "$file"
+done
+
+# Summary
+clear
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}       CONVERSION COMPLETE${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
+echo "Total files processed:   $TOTAL_FILES"
+echo -e "Successful conversions:  ${GREEN}$SUCCESS_COUNT${NC}"
+echo -e "Failed conversions:      ${RED}$FAILED_COUNT${NC}"
+echo
+
+if [ $FAILED_COUNT -gt 0 ]; then
+    echo -e "${YELLOW}Check the errors above and try again.${NC}"
 fi
 
-# Image conversions (JPG, PNG, BMP, GIF, TIFF, WEBP)
-if [[ "${ext,,}" =~ ^(jpg|jpeg|png|bmp|gif|tiff|tif|webp)$ ]]; then
-    echo "Converting image format using ImageMagick..."
-    convert "$INFILE" "$OUTFILE"
-    if [ $? -eq 0 ]; then
-        echo "Conversion successful: $OUTFILE"
-    else
-        echo "Conversion failed. Make sure ImageMagick is installed (sudo apt install imagemagick)."
-    fi
-    exit 0
-fi
-
-# No conversion found
-echo "No conversion logic implemented for .$ext to $OUTEXT"
-echo "Please add conversion command for this file type."
+echo
+read -p "Press Enter to exit..."
+exit 0
