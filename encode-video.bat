@@ -11,7 +11,7 @@ if not exist "%FFMPEG%" (
     echo %FFMPEG%
     echo.
     echo Please correct the path above inside this batch file.
-    pause & exit /b 1
+    exit /b 1
 )
 
 :: === PROCESS ALL VIDEOS IN ONE GO =============================
