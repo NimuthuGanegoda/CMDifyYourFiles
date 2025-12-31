@@ -1,72 +1,63 @@
 #!/bin/bash
 
-# Check if a file or folder was provided
+# Check if a file was provided
 if [ -z "$1" ]; then
-    echo "Please drag and drop a file or folder onto this script."
+    echo "Please drag and drop a file onto this script."
     exit 1
 fi
 
-INPUT="$1"
+INFILE="$1"
+ext="${INFILE##*.}"
+echo "Detected file type: .$ext"
 
-is_image_ext() {
-    case "${1,,}" in
-        jpg|jpeg|png|bmp|gif|tiff|tif|webp) return 0 ;;
-        *) return 1 ;;
-    esac
-}
+# Prompt for output extension
+read -p "Enter desired output extension (e.g. pdf, docx, jpg): " OUTEXT
 
-convert_single() {
-    local INFILE="$1"; local OUTEXT="$2"
-    local ext="${INFILE##*.}"; ext="${ext,,}"
-    local OUTFILE="${INFILE%.*}.$OUTEXT"
-    echo "Input file: $INFILE"
-    echo "Output file: $OUTFILE"
+# Prepare output filename
+OUTFILE="${INFILE%.*}.$OUTEXT"
+echo "Input file: $INFILE"
+echo "Output file: $OUTFILE"
 
-    # PPT/PPTX/DOC/DOCX -> PDF via LibreOffice
-    if [[ "${OUTEXT,,}" == "pdf" ]]; then
-        if [[ "$ext" == "pptx" || "$ext" == "ppt" || "$ext" == "docx" || "$ext" == "doc" ]]; then
-            echo "Converting to PDF using LibreOffice..."
-            libreoffice --headless --convert-to pdf --outdir "$(dirname "$INFILE")" "$INFILE"
-            if [ $? -eq 0 ]; then
-                echo "Conversion successful: ${INFILE%.*}.pdf"
-            else
-                echo "Conversion failed. Ensure LibreOffice is installed."
-            fi
-            return
-        fi
-    fi
+# Conversion logic
 
-    # Image conversions via ImageMagick
-    if is_image_ext "$ext"; then
-        echo "Converting image format using ImageMagick..."
-        convert "$INFILE" "$OUTFILE"
+# PowerPoint to PDF (PPTX/PPT)
+if [[ "${OUTEXT,,}" == "pdf" ]]; then
+    if [[ "${ext,,}" == "pptx" || "${ext,,}" == "ppt" ]]; then
+        echo "Converting PowerPoint to PDF using LibreOffice..."
+        libreoffice --headless --convert-to pdf --outdir "$(dirname "$INFILE")" "$INFILE"
         if [ $? -eq 0 ]; then
             echo "Conversion successful: $OUTFILE"
         else
-            echo "Conversion failed. Make sure ImageMagick is installed (sudo apt install imagemagick)."
+            echo "Conversion failed. Make sure LibreOffice is installed."
         fi
-        return
+        exit 0
     fi
-
-    echo "No conversion logic implemented for .$ext to $OUTEXT"
-}
-
-if [ -d "$INPUT" ]; then
-    read -p "Enter desired output extension for all files (e.g. pdf, jpg): " OUTEXT
-    if [[ -z "$OUTEXT" ]]; then
-        echo "No output extension provided. Exiting."
-        exit 1
+    
+    # Word to PDF (DOCX/DOC)
+    if [[ "${ext,,}" == "docx" || "${ext,,}" == "doc" ]]; then
+        echo "Converting Word document to PDF using LibreOffice..."
+        libreoffice --headless --convert-to pdf --outdir "$(dirname "$INFILE")" "$INFILE"
+        if [ $? -eq 0 ]; then
+            echo "Conversion successful: $OUTFILE"
+        else
+            echo "Conversion failed. Make sure LibreOffice is installed."
+        fi
+        exit 0
     fi
-    export -f convert_single is_image_ext
-    export OUTEXT
-    find "$INPUT" -type f -print0 | xargs -0 -I {} bash -c 'convert_single "$0" "$OUTEXT"' {}
-else
-    ext="${INPUT##*.}"
-    echo "Detected file type: .${ext}"
-    read -p "Enter desired output extension (e.g. pdf, docx, jpg): " OUTEXT
-    if [[ -z "$OUTEXT" ]]; then
-        echo "No output extension provided. Exiting."
-        exit 1
-    fi
-    convert_single "$INPUT" "$OUTEXT"
 fi
+
+# Image conversions (JPG, PNG, BMP, GIF, TIFF, WEBP)
+if [[ "${ext,,}" =~ ^(jpg|jpeg|png|bmp|gif|tiff|tif|webp)$ ]]; then
+    echo "Converting image format using ImageMagick..."
+    convert "$INFILE" "$OUTFILE"
+    if [ $? -eq 0 ]; then
+        echo "Conversion successful: $OUTFILE"
+    else
+        echo "Conversion failed. Make sure ImageMagick is installed (sudo apt install imagemagick)."
+    fi
+    exit 0
+fi
+
+# No conversion found
+echo "No conversion logic implemented for .$ext to $OUTEXT"
+echo "Please add conversion command for this file type."

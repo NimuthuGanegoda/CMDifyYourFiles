@@ -29,12 +29,10 @@ if "%~1"=="" (
 )
 
 if exist "%SOURCE%\" (
-    rem Recursively process supported audio files in folder
-    for /r "%SOURCE%" %%F in (*.mp3 *.flac *.wav *.m4a *.aac *.ogg *.opus *.wma) do (
-        if exist "%%~fF" call :process "%%~fF"
+    for %%F in ("%SOURCE%"\*.mp3 "%SOURCE%"\*.flac "%SOURCE%"\*.wav "%SOURCE%"\*.m4a "%SOURCE%"\*.aac "%SOURCE%"\*.ogg "%SOURCE%"\*.opus "%SOURCE%"\*.wma) do (
+        if exist "%%F" call :process "%%F"
     )
 ) else (
-    rem Single file provided
     call :process "%SOURCE%"
 )
 goto :eof
