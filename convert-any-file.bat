@@ -17,7 +17,7 @@ if "%~1"=="" (
     echo 2. Enter the desired output format
     echo 3. Files will be converted in the same folder
     echo.
-    echo Supported: ppt/pptx/doc/docx to PDF, images to other formats
+    echo Supported: ppt/pptx/doc/docx to PDF, PDF to images, images to other formats
     echo.
     pause
     exit /b 1
@@ -30,7 +30,7 @@ echo.
 :: Prompt for output extension
 :prompt_extension
 set "OUTEXT="
-set /p OUTEXT=Enter output format (pdf, jpg, png, etc.): 
+set /p OUTEXT=Enter output format (pdf, jpg, png, etc.):
 if "!OUTEXT!"=="" (
     echo ERROR: Cannot be empty. Try again.
     echo.
@@ -76,6 +76,18 @@ if /i "!OUTEXT!"=="pdf" (
     if /i "!EXT!"=="doc" goto :do_word
 )
 
+:: PDF to Image
+if /i "!EXT!"=="pdf" (
+    if /i "!OUTEXT!"=="jpg" goto :do_pdf_img
+    if /i "!OUTEXT!"=="jpeg" goto :do_pdf_img
+    if /i "!OUTEXT!"=="png" goto :do_pdf_img
+    if /i "!OUTEXT!"=="bmp" goto :do_pdf_img
+    if /i "!OUTEXT!"=="gif" goto :do_pdf_img
+    if /i "!OUTEXT!"=="tiff" goto :do_pdf_img
+    if /i "!OUTEXT!"=="tif" goto :do_pdf_img
+    if /i "!OUTEXT!"=="webp" goto :do_pdf_img
+)
+
 :: Images
 if /i "!EXT!"=="jpg" goto :do_image
 if /i "!EXT!"=="jpeg" goto :do_image
@@ -115,6 +127,40 @@ if !ERRORLEVEL! equ 0 (
 shift
 goto :next_file
 
+:do_pdf_img
+where magick >nul 2>nul
+if !ERRORLEVEL! equ 0 (
+    magick -density 150 "!FILE!" -quality 100 "!OUTFILE!" >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        echo     OK - Saved as %~n1.!OUTEXT!
+        set /a SUCCESS+=1
+    ) else (
+        echo     ERROR - Conversion failed ^(ImageMagick error^)
+        set /a FAILED+=1
+    )
+    shift
+    goto :next_file
+)
+
+where convert >nul 2>nul
+if !ERRORLEVEL! equ 0 (
+    convert -density 150 "!FILE!" -quality 100 "!OUTFILE!" >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        echo     OK - Saved as %~n1.!OUTEXT!
+        set /a SUCCESS+=1
+    ) else (
+        echo     ERROR - Conversion failed ^(ImageMagick error^)
+        set /a FAILED+=1
+    )
+    shift
+    goto :next_file
+)
+
+echo     ERROR - ImageMagick (magick/convert) not found
+set /a FAILED+=1
+shift
+goto :next_file
+
 :do_image
 powershell -NoProfile -Command "Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile('!FILE!'); $img.Save('!OUTFILE!'); $img.Dispose()" >nul 2>&1
 if !ERRORLEVEL! equ 0 (
@@ -137,4 +183,3 @@ echo ==========================================
 echo.
 pause
 exit /b
-
