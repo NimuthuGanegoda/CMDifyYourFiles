@@ -120,8 +120,8 @@ convert_file() {
         fi
     fi
     
-    # Image conversions (JPG, PNG, BMP, GIF, TIFF, WEBP)
-    if [[ "$ext" =~ ^(jpg|jpeg|png|bmp|gif|tiff|tif|webp)$ ]]; then
+    # Image conversions (JPG, PNG, BMP, GIF, TIFF, WEBP, PDF)
+    if [[ "$ext" =~ ^(jpg|jpeg|png|bmp|gif|tiff|tif|webp|pdf)$ ]]; then
         if ! command -v convert &> /dev/null; then
             echo -e "${RED}[ERROR]${NC} ImageMagick not installed. Install with: sudo apt install imagemagick"
             ((FAILED_COUNT++))

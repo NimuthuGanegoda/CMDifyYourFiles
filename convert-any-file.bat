@@ -30,7 +30,7 @@ echo.
 :: Prompt for output extension
 :prompt_extension
 set "OUTEXT="
-set /p OUTEXT=Enter output format (pdf, jpg, png, etc.): 
+set /p OUTEXT=Enter output format (pdf, jpg, png, etc.):
 if "!OUTEXT!"=="" (
     echo ERROR: Cannot be empty. Try again.
     echo.
@@ -85,6 +85,7 @@ if /i "!EXT!"=="gif" goto :do_image
 if /i "!EXT!"=="tiff" goto :do_image
 if /i "!EXT!"=="tif" goto :do_image
 if /i "!EXT!"=="webp" goto :do_image
+if /i "!EXT!"=="pdf" goto :do_pdf_image
 
 echo     SKIP - .!EXT! to .!OUTEXT! not supported
 set /a FAILED+=1
@@ -127,6 +128,21 @@ if !ERRORLEVEL! equ 0 (
 shift
 goto :next_file
 
+:do_pdf_image
+magick "!FILE!" "!OUTFILE!" >nul 2>&1
+if !ERRORLEVEL! neq 0 (
+    convert "!FILE!" "!OUTFILE!" >nul 2>&1
+)
+if !ERRORLEVEL! equ 0 (
+    echo     OK - Saved as %~n1.!OUTEXT!
+    set /a SUCCESS+=1
+) else (
+    echo     ERROR - PDF conversion requires ImageMagick installed
+    set /a FAILED+=1
+)
+shift
+goto :next_file
+
 :done
 echo.
 echo ==========================================
@@ -137,4 +153,3 @@ echo ==========================================
 echo.
 pause
 exit /b
-
