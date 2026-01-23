@@ -17,7 +17,7 @@ if "%~1"=="" (
     echo 2. Enter the desired output format
     echo 3. Files will be converted in the same folder
     echo.
-    echo Supported: ppt/pptx/doc/docx to PDF, images to other formats
+    echo Supported: ppt/pptx/doc/docx to PDF, PDF to images, images to other formats
     echo.
     pause
     exit /b 1
@@ -85,7 +85,6 @@ if /i "!EXT!"=="gif" goto :do_image
 if /i "!EXT!"=="tiff" goto :do_image
 if /i "!EXT!"=="tif" goto :do_image
 if /i "!EXT!"=="webp" goto :do_image
-if /i "!EXT!"=="pdf" goto :do_pdf_image
 
 echo     SKIP - .!EXT! to .!OUTEXT! not supported
 set /a FAILED+=1
@@ -116,6 +115,40 @@ if !ERRORLEVEL! equ 0 (
 shift
 goto :next_file
 
+:do_pdf_img
+where magick >nul 2>nul
+if !ERRORLEVEL! equ 0 (
+    magick -density 150 "!FILE!" -quality 100 "!OUTFILE!" >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        echo     OK - Saved as %~n1.!OUTEXT!
+        set /a SUCCESS+=1
+    ) else (
+        echo     ERROR - Conversion failed ^(ImageMagick error^)
+        set /a FAILED+=1
+    )
+    shift
+    goto :next_file
+)
+
+where convert >nul 2>nul
+if !ERRORLEVEL! equ 0 (
+    convert -density 150 "!FILE!" -quality 100 "!OUTFILE!" >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        echo     OK - Saved as %~n1.!OUTEXT!
+        set /a SUCCESS+=1
+    ) else (
+        echo     ERROR - Conversion failed ^(ImageMagick error^)
+        set /a FAILED+=1
+    )
+    shift
+    goto :next_file
+)
+
+echo     ERROR - ImageMagick (magick/convert) not found
+set /a FAILED+=1
+shift
+goto :next_file
+
 :do_image
 powershell -NoProfile -Command "Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile('!FILE!'); $img.Save('!OUTFILE!'); $img.Dispose()" >nul 2>&1
 if !ERRORLEVEL! equ 0 (
@@ -123,21 +156,6 @@ if !ERRORLEVEL! equ 0 (
     set /a SUCCESS+=1
 ) else (
     echo     ERROR - Conversion failed
-    set /a FAILED+=1
-)
-shift
-goto :next_file
-
-:do_pdf_image
-magick "!FILE!" "!OUTFILE!" >nul 2>&1
-if !ERRORLEVEL! neq 0 (
-    convert "!FILE!" "!OUTFILE!" >nul 2>&1
-)
-if !ERRORLEVEL! equ 0 (
-    echo     OK - Saved as %~n1.!OUTEXT!
-    set /a SUCCESS+=1
-) else (
-    echo     ERROR - PDF conversion requires ImageMagick installed
     set /a FAILED+=1
 )
 shift

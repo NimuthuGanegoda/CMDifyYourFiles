@@ -23,6 +23,7 @@ if [ -z "$1" ]; then
     echo
     echo "Supported conversions:"
     echo "  - PowerPoint/Word (ppt, pptx, doc, docx) → PDF"
+    echo "  - PDF → Images (jpg, png, bmp, gif, tiff, webp)"
     echo "  - Images (jpg, png, bmp, gif, tiff, webp) → other formats"
     echo
     read -p "Press Enter to exit..."
@@ -82,6 +83,26 @@ convert_file() {
     
     echo "[$TOTAL_FILES] Converting: $(basename "$INFILE")"
     
+    # PDF to Image
+    if [[ "$ext" == "pdf" ]]; then
+        if [[ "${OUTEXT,,}" =~ ^(jpg|jpeg|png|bmp|gif|tiff|tif|webp)$ ]]; then
+            if ! command -v convert &> /dev/null; then
+                echo -e "${RED}[ERROR]${NC} ImageMagick not installed. Install with: sudo apt install imagemagick ghostscript"
+                ((FAILED_COUNT++))
+                return
+            fi
+            echo "Converting PDF to image..."
+            if convert "$INFILE" "$OUTFILE" > /dev/null 2>&1; then
+                echo -e "${GREEN}[OK]${NC} $(basename "$OUTFILE")"
+                ((SUCCESS_COUNT++))
+            else
+                echo -e "${RED}[ERROR]${NC} Conversion failed. Ensure ghostscript is installed."
+                ((FAILED_COUNT++))
+            fi
+            return
+        fi
+    fi
+
     # PowerPoint to PDF (PPTX/PPT)
     if [[ "${OUTEXT,,}" == "pdf" ]]; then
         if [[ "$ext" == "pptx" || "$ext" == "ppt" ]]; then

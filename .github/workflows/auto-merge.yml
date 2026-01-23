@@ -1,0 +1,8 @@
+# Auto-merge workflow intentionally disabled.
+# 
+# The previous configuration used `pascalgn/automerge-action` with the
+# default GITHUB_TOKEN. Introducing automated merge behavior should be
+# done in a separate, clearly documented PR with reviewed merge criteria
+# and security considerations.
+#
+# This file is currently left without any active workflows.
