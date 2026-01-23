@@ -15,6 +15,9 @@ Handy scripts for automating file conversion and encoding on Windows and Linux, 
 - **🎵 Audio Encoder**  
   Reduce audio file size for sharing. Accepts a single audio file or a folder (recursive): `audio.bat` (Windows) and `audio.sh` (Linux).
 
+- **📄 Advanced File Tools**
+  Perform advanced operations like merging PDFs, splitting PDFs, compressing PDFs, and creating image collages. Linux only: `process-files.sh`.
+
 ---
 
 ## 🛠️ Requirements
@@ -22,7 +25,9 @@ Handy scripts for automating file conversion and encoding on Windows and Linux, 
 - Windows or Linux OS
 - ffmpeg installed and available in `PATH` (audio/video)
 - LibreOffice (Linux) for Office → PDF conversions
-- ImageMagick (`convert`) for image format conversions
+- ImageMagick (`convert`, `montage`) for image format conversions and collages
+- Ghostscript (`gs`) for PDF compression
+- Poppler Utils (`pdfunite`, `pdfseparate`) for PDF merging and splitting
 - (Windows) Microsoft PowerPoint/Word for Office → PDF conversions
 
 ---
@@ -93,6 +98,28 @@ audio.bat "path\to\your\folder"
 **Linux (folder, recursive):**
 ```bash
 ./audio.sh "path/to/your/folder"
+```
+
+### 4. Advanced File Tools
+
+**Linux (Interactive Menu):**
+```bash
+./process-files.sh
+```
+
+**Linux (Command Line):**
+```bash
+# Merge PDFs
+./process-files.sh merge file1.pdf file2.pdf output.pdf
+
+# Split PDF
+./process-files.sh split input.pdf output-prefix
+
+# Compress PDF
+./process-files.sh compress input.pdf output.pdf
+
+# Image Collage
+./process-files.sh collage img1.jpg img2.jpg output.jpg
 ```
 
 ---
