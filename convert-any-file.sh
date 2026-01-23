@@ -93,7 +93,23 @@ convert_file() {
             fi
             echo "Converting PDF to image..."
             if convert "$INFILE" "$OUTFILE" > /dev/null 2>&1; then
-                echo -e "${GREEN}[OK]${NC} $(basename "$OUTFILE")"
+                # Handle ImageMagick's multi-page PDF output naming (basename-0.ext, basename-1.ext, ...)
+                base="${INFILE%.*}"
+                shopt -s nullglob
+                pdf_images=( "$base"-*."$OUTEXT" )
+                shopt -u nullglob
+
+                if [ ${#pdf_images[@]} -gt 1 ]; then
+                    echo -e "${GREEN}[OK]${NC} Created ${#pdf_images[@]} images (e.g. $(basename "${pdf_images[0]}"), $(basename "${pdf_images[1]}")...) for $(basename "$INFILE")"
+                elif [ ${#pdf_images[@]} -eq 1 ]; then
+                    echo -e "${GREEN}[OK]${NC} $(basename "${pdf_images[0]}")"
+                elif [ -e "$OUTFILE" ]; then
+                    # Fallback for single-output cases where OUTFILE exists
+                    echo -e "${GREEN}[OK]${NC} $(basename "$OUTFILE")"
+                else
+                    # Generic success message if we can't determine the exact output filenames
+                    echo -e "${GREEN}[OK]${NC} PDF converted to image(s) with base name '$(basename "$base")'"
+                fi
                 ((SUCCESS_COUNT++))
             else
                 echo -e "${RED}[ERROR]${NC} Conversion failed. Ensure ghostscript is installed."
