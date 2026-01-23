@@ -16,7 +16,7 @@ Handy scripts for automating file conversion and encoding on Windows and Linux, 
   Reduce audio file size for sharing. Accepts a single audio file or a folder (recursive): `audio.bat` (Windows) and `audio.sh` (Linux).
 
 - **📄 Advanced File Tools**
-  Perform advanced operations like merging PDFs, splitting PDFs, compressing PDFs, and creating image collages. Linux only: `process-files.sh`.
+  Perform advanced operations like merging PDFs, splitting PDFs, compressing PDFs, rotating PDFs, watermarking PDFs, and creating image collages. Linux only: `process-files.sh`.
 
 ---
 
@@ -28,6 +28,7 @@ Handy scripts for automating file conversion and encoding on Windows and Linux, 
 - ImageMagick (`convert`, `montage`) for image format conversions and collages
 - Ghostscript (`gs`) for PDF compression
 - Poppler Utils (`pdfunite`, `pdfseparate`) for PDF merging and splitting
+- QPDF (`qpdf`) for PDF rotation and watermarking
 - (Windows) Microsoft PowerPoint/Word for Office → PDF conversions
 
 ---
@@ -120,6 +121,12 @@ audio.bat "path\to\your\folder"
 
 # Image Collage
 ./process-files.sh collage img1.jpg img2.jpg output.jpg
+
+# Rotate PDF
+./process-files.sh rotate input.pdf +90 output.pdf
+
+# Watermark PDF
+./process-files.sh watermark input.pdf "CONFIDENTIAL" output.pdf
 ```
 
 ---
