@@ -76,18 +76,6 @@ if /i "!OUTEXT!"=="pdf" (
     if /i "!EXT!"=="doc" goto :do_word
 )
 
-:: PDF to Image
-if /i "!EXT!"=="pdf" (
-    if /i "!OUTEXT!"=="jpg" goto :do_pdf_img
-    if /i "!OUTEXT!"=="jpeg" goto :do_pdf_img
-    if /i "!OUTEXT!"=="png" goto :do_pdf_img
-    if /i "!OUTEXT!"=="bmp" goto :do_pdf_img
-    if /i "!OUTEXT!"=="gif" goto :do_pdf_img
-    if /i "!OUTEXT!"=="tiff" goto :do_pdf_img
-    if /i "!OUTEXT!"=="tif" goto :do_pdf_img
-    if /i "!OUTEXT!"=="webp" goto :do_pdf_img
-)
-
 :: Images
 if /i "!EXT!"=="jpg" goto :do_image
 if /i "!EXT!"=="jpeg" goto :do_image
