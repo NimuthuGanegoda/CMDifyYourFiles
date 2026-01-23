@@ -30,6 +30,11 @@ check_deps() {
         echo "Install with: sudo apt install imagemagick"
         missing=1
     fi
+    if ! command -v qpdf &> /dev/null; then
+        echo -e "${RED}Error: qpdf not found.${NC}"
+        echo "Install with: sudo apt install qpdf"
+        missing=1
+    fi
 
     if [ $missing -eq 1 ]; then
         exit 1
@@ -122,6 +127,64 @@ create_collage() {
     fi
 }
 
+rotate_pdf() {
+    if [ "$#" -ne 3 ]; then
+        echo -e "${RED}Error: Input file, angle, and output file required.${NC}"
+        echo "Usage: rotate input.pdf angle output.pdf"
+        echo "Angle examples: +90, +180, -90"
+        return 1
+    fi
+
+    local input=$1
+    local angle=$2
+    local output=$3
+
+    echo "Rotating $input by $angle degrees..."
+    qpdf --rotate="$angle" "$input" "$output"
+
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Success! Saved to $output${NC}"
+    else
+        echo -e "${RED}Failed to rotate PDF.${NC}"
+    fi
+}
+
+watermark_pdf() {
+    if [ "$#" -ne 3 ]; then
+        echo -e "${RED}Error: Input file, text, and output file required.${NC}"
+        echo "Usage: watermark input.pdf 'Watermark Text' output.pdf"
+        return 1
+    fi
+
+    local input=$1
+    local text=$2
+    local output=$3
+    local temp_watermark="temp_watermark_$(date +%s).pdf"
+
+    echo "Creating watermark with text '$text'..."
+    # Create a temporary transparent watermark PDF
+    convert -size 1000x1000 xc:none -gravity center -pointsize 60 \
+            -fill "rgba(0,0,0,0.2)" -annotate 45 "$text" \
+            "$temp_watermark"
+
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Failed to create watermark image.${NC}"
+        return 1
+    fi
+
+    echo "Applying watermark..."
+    qpdf "$input" --overlay "$temp_watermark" --repeat=1 -- "$output"
+
+    local ret=$?
+    rm -f "$temp_watermark"
+
+    if [ $ret -eq 0 ]; then
+        echo -e "${GREEN}Success! Saved to $output${NC}"
+    else
+        echo -e "${RED}Failed to watermark PDF.${NC}"
+    fi
+}
+
 interactive_menu() {
     clear
     echo -e "${BLUE}========================================${NC}"
@@ -131,6 +194,8 @@ interactive_menu() {
     echo "2. Split PDF"
     echo "3. Compress PDF"
     echo "4. Create Image Collage"
+    echo "5. Rotate PDF"
+    echo "6. Watermark PDF"
     echo "q. Quit"
     echo
     read -p "Select an option: " choice
@@ -155,6 +220,18 @@ interactive_menu() {
             read -p "Enter image files for collage (space separated): " files
             read -p "Enter output filename: " out
             create_collage $files "$out"
+            ;;
+        5)
+            read -p "Enter PDF file to rotate: " infile
+            read -p "Enter rotation angle (+90, +180, -90): " angle
+            read -p "Enter output filename: " out
+            rotate_pdf "$infile" "$angle" "$out"
+            ;;
+        6)
+            read -p "Enter PDF file to watermark: " infile
+            read -p "Enter watermark text: " text
+            read -p "Enter output filename: " out
+            watermark_pdf "$infile" "$text" "$out"
             ;;
         q)
             exit 0
@@ -186,9 +263,15 @@ else
         collage)
             create_collage "$@"
             ;;
+        rotate)
+            rotate_pdf "$@"
+            ;;
+        watermark)
+            watermark_pdf "$@"
+            ;;
         *)
             echo "Unknown command: $CMD"
-            echo "Available commands: merge, split, compress, collage"
+            echo "Available commands: merge, split, compress, collage, rotate, watermark"
             exit 1
             ;;
     esac

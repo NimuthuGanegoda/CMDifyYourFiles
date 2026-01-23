@@ -22,7 +22,7 @@ if [ -z "$1" ]; then
     echo "  3. Files will be converted and saved in the same folder"
     echo
     echo "Supported conversions:"
-    echo "  - PowerPoint/Word (ppt, pptx, doc, docx) → PDF"
+    echo "  - Office (ppt, pptx, doc, docx, xls, xlsx) → PDF"
     echo "  - PDF → Images (jpg, png, bmp, gif, tiff, webp)"
     echo "  - Images (jpg, png, bmp, gif, tiff, webp) → other formats"
     echo
@@ -130,6 +130,24 @@ convert_file() {
                 return
             fi
             echo "Converting Word to PDF..."
+            if libreoffice --headless --convert-to pdf --outdir "$(dirname "$INFILE")" "$INFILE" > /dev/null 2>&1; then
+                echo -e "${GREEN}[OK]${NC} $(basename "$OUTFILE")"
+                ((SUCCESS_COUNT++))
+            else
+                echo -e "${RED}[ERROR]${NC} Conversion failed"
+                ((FAILED_COUNT++))
+            fi
+            return
+        fi
+
+        # Excel to PDF (XLSX/XLS)
+        if [[ "$ext" == "xlsx" || "$ext" == "xls" ]]; then
+            if ! command -v libreoffice &> /dev/null; then
+                echo -e "${RED}[ERROR]${NC} LibreOffice not installed. Install with: sudo apt install libreoffice"
+                ((FAILED_COUNT++))
+                return
+            fi
+            echo "Converting Excel to PDF..."
             if libreoffice --headless --convert-to pdf --outdir "$(dirname "$INFILE")" "$INFILE" > /dev/null 2>&1; then
                 echo -e "${GREEN}[OK]${NC} $(basename "$OUTFILE")"
                 ((SUCCESS_COUNT++))
