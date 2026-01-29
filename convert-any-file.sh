@@ -25,6 +25,7 @@ if [ -z "$1" ]; then
     echo "  - Office (ppt, pptx, doc, docx, xls, xlsx) → PDF"
     echo "  - PDF → Images (jpg, png, bmp, gif, tiff, webp)"
     echo "  - Images (jpg, png, bmp, gif, tiff, webp) → other formats"
+    echo "  - Video (mp4, mkv, avi, ifo, bup, etc.) → other video formats"
     echo
     read -p "Press Enter to exit..."
     exit 1
@@ -175,6 +176,26 @@ convert_file() {
             ((FAILED_COUNT++))
         fi
         return
+    fi
+
+    # Video conversions
+    if [[ "$ext" =~ ^(mp4|mkv|avi|mov|flv|wmv|webm|vob|ifo|bup)$ ]]; then
+        if [[ "${OUTEXT,,}" =~ ^(mp4|mkv|mov|avi|flv|wmv|webm)$ ]]; then
+            if ! command -v ffmpeg &> /dev/null; then
+                echo -e "${RED}[ERROR]${NC} FFmpeg not installed. Install with: sudo apt install ffmpeg"
+                ((FAILED_COUNT++))
+                return
+            fi
+            echo "Converting video..."
+            if ffmpeg -i "$INFILE" -y "$OUTFILE" > /dev/null 2>&1; then
+                echo -e "${GREEN}[OK]${NC} $(basename "$OUTFILE")"
+                ((SUCCESS_COUNT++))
+            else
+                echo -e "${RED}[ERROR]${NC} Video conversion failed"
+                ((FAILED_COUNT++))
+            fi
+            return
+        fi
     fi
     
     # No conversion found
