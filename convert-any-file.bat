@@ -17,7 +17,7 @@ if "%~1"=="" (
     echo 2. Enter the desired output format
     echo 3. Files will be converted in the same folder
     echo.
-    echo Supported: ppt/pptx/doc/docx to PDF, PDF to images, images to other formats
+    echo Supported: ppt/pptx/doc/docx to PDF, PDF to images, images to other formats, video conversion
     echo.
     pause
     exit /b 1
@@ -86,6 +86,18 @@ if /i "!EXT!"=="tiff" goto :do_image
 if /i "!EXT!"=="tif" goto :do_image
 if /i "!EXT!"=="webp" goto :do_image
 
+:: Video
+if /i "!EXT!"=="mp4" goto :do_video
+if /i "!EXT!"=="mkv" goto :do_video
+if /i "!EXT!"=="avi" goto :do_video
+if /i "!EXT!"=="mov" goto :do_video
+if /i "!EXT!"=="flv" goto :do_video
+if /i "!EXT!"=="wmv" goto :do_video
+if /i "!EXT!"=="webm" goto :do_video
+if /i "!EXT!"=="vob" goto :do_video
+if /i "!EXT!"=="ifo" goto :do_video
+if /i "!EXT!"=="bup" goto :do_video
+
 echo     SKIP - .!EXT! to .!OUTEXT! not supported
 set /a FAILED+=1
 shift
@@ -151,6 +163,26 @@ goto :next_file
 
 :do_image
 powershell -NoProfile -Command "Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile('!FILE!'); $img.Save('!OUTFILE!'); $img.Dispose()" >nul 2>&1
+if !ERRORLEVEL! equ 0 (
+    echo     OK - Saved as %~n1.!OUTEXT!
+    set /a SUCCESS+=1
+) else (
+    echo     ERROR - Conversion failed
+    set /a FAILED+=1
+)
+shift
+goto :next_file
+
+:do_video
+ffmpeg -version >nul 2>&1
+if !ERRORLEVEL! neq 0 (
+    echo     ERROR - FFmpeg not found
+    set /a FAILED+=1
+    shift
+    goto :next_file
+)
+
+ffmpeg -i "!FILE!" -y "!OUTFILE!" >nul 2>&1
 if !ERRORLEVEL! equ 0 (
     echo     OK - Saved as %~n1.!OUTEXT!
     set /a SUCCESS+=1
